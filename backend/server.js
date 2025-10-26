@@ -12,6 +12,51 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+const createTables = async () => {
+  try {
+    // Таблица пользователей
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Таблица проектов
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        budget DECIMAL(15,2) NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Таблица транзакций
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY,
+        amount DECIMAL(15,2) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        description TEXT,
+        type VARCHAR(10) CHECK (type IN ('income', 'expense')),
+        project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log("✅ Таблицы созданы/проверены");
+  } catch (error) {
+    console.log("❌ Ошибка создания таблиц:", error.message);
+  }
+};
+
+createTables();
+
 // === MOCK REDIS ДЛЯ ДЕМОНСТРАЦИИ ===
 console.log("🔴 Используется Mock Redis для демонстрации кеширования");
 
